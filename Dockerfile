@@ -1,21 +1,25 @@
 FROM node:20-bookworm-slim
 
-# Install MongoDB Database Tools (mongodump / mongorestore)
+# Install MongoDB Database Tools
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends gnupg curl \
-  && curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor \
-  && echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] http://repo.mongodb.org/apt/debian bookworm/mongodb-org/8.0 main" | tee /etc/apt/sources.list.d/mongodb-org-8.0.list \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends mongodb-database-tools \
-  && rm -rf /var/lib/apt/lists/* \
-  && mongodump --version && mongorestore --version
+  && apt-get install -y --no-install-recommends ca-certificates curl tar \
+  && curl -L https://fastdl.mongodb.org/tools/db/mongodb-database-tools-debian12-x86_64-100.13.0.tgz \
+     -o /tmp/mongodb-tools.tgz \
+  && tar -xzf /tmp/mongodb-tools.tgz -C /tmp \
+  && cp /tmp/mongodb-database-tools-*/bin/mongodump /usr/local/bin/ \
+  && cp /tmp/mongodb-database-tools-*/bin/mongorestore /usr/local/bin/ \
+  && rm -rf /tmp/mongodb* \
+  && mongodump --version \
+  && mongorestore --version \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 COPY . .
+
 RUN mkdir -p backups uploads
 
 EXPOSE 3000
