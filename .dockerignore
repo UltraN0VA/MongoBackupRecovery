@@ -1,0 +1,10 @@
+node_modules/
+npm-debug.log
+backups/
+uploads/
+.git/
+.gitignore
+README.md
+.env
+Dockerfile
+.dockerignore
