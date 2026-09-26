@@ -1,0 +1,9 @@
+node_modules/
+backups/*.archive
+backups/*.archive.gz
+backups/*.gz
+backups/*.meta.json
+uploads/*
+!uploads/.gitkeep
+!backups/.gitkeep
+.env

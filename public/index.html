@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MongoDB Backup & Restore</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">🍃</div>
+    <div>
+      <h1>MongoDB Backup & Restore</h1>
+      <p>Powered by <code>mongodump</code> / <code>mongorestore</code></p>
+    </div>
+  </div>
+  <div id="health" class="health"><span class="dot pulse"></span> checking tools…</div>
+</header>
+
+<main class="container">
+  <nav class="tabs">
+    <button class="tab active" data-tab="backup">Backup</button>
+    <button class="tab" data-tab="restore">Restore</button>
+    <button class="tab" data-tab="library">Library</button>
+  </nav>
+
+  <!-- BACKUP -->
+  <section id="tab-backup" class="panel">
+    <h2>Create backup <span class="badge">mongodump --archive --gzip</span></h2>
+    <div class="grid">
+      <div class="card">
+        <label>Source MongoDB URI
+          <input id="backup-uri" type="text" placeholder="Enter Mongo Database URI" />
+          <div id="backup-uri-error" class="field-error hidden"></div>
+        </label>
+        <div class="row">
+          <button id="btn-list-dbs" class="btn secondary">List databases</button>
+          <select id="backup-db-select" style="display:none"></select>
+        </div>
+        <label>Database name
+          <input id="backup-db" type="text" placeholder="(empty = all databases)" />
+          <div id="backup-db-error" class="field-error hidden"></div>
+        </label>
+        <label class="check"><input id="backup-gzip" type="checkbox" checked /> Use --gzip (smaller file, recommended)</label>
+        <label class="check"><input id="backup-autodownload" type="checkbox" checked /> Auto-download after backup</label>
+        <label>Custom file name
+          <input id="backup-name" type="text" placeholder="(optional)" />
+        </label>
+        <button id="btn-backup" class="btn primary">⬇ Create backup</button>
+        <div id="backup-progress" class="progress-wrap hidden">
+          <span class="spinner"></span>
+          <div class="progress-meta">
+            <div class="progress-title">Running mongodump… <span id="backup-elapsed" class="elapsed">0.0s</span></div>
+            <div id="backup-status" class="progress-sub">Starting…</div>
+            <div class="progress-track"><div class="progress-fill"></div></div>
+          </div>
+        </div>
+        <div id="backup-result" class="result"></div>
+      </div>
+      <div class="card dark">
+        <h3>Output log</h3>
+        <pre id="backup-log">No backup run yet.</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESTORE -->
+  <section id="tab-restore" class="panel hidden">
+    <h2>Restore backup <span class="badge">mongorestore --archive</span></h2>
+    <div class="grid">
+      <div class="card">
+        <label>Target MongoDB URI
+          <input id="restore-uri" type="text" placeholder="Enter Mongo Database URI" />
+          <div id="restore-uri-error" class="field-error hidden"></div>
+        </label>
+        <div class="row">
+          <button id="btn-list-restore-dbs" class="btn secondary">List databases</button>
+          <select id="restore-db-select" style="display:none"></select>
+        </div>
+        <label>Target database
+          <input id="restore-db" type="text" placeholder="(empty = as stored in archive)" />
+          <div id="restore-db-error" class="field-error hidden"></div>
+        </label>
+        <div class="checks">
+          <label class="check"><input id="restore-drop" type="checkbox" /> --drop <small>delete target before restore</small></label>
+          <label class="check"><input id="restore-noindex" type="checkbox" /> --noIndexRestore <small>skip indexes (faster)</small></label>
+        </div>
+        <div id="warn-drop" class="notice notice-danger hidden">
+          <span class="notice-icon">⚠️</span>
+          <div><strong>--drop is enabled.</strong> The target database will be permanently deleted before restore. Double-check the target URI.</div>
+        </div>
+        <div id="warn-noindex" class="notice notice-info hidden">
+          <span class="notice-icon">ℹ️</span>
+          <div><strong>--noIndexRestore is enabled.</strong> Collections will restore without indexes for speed. You'll need to rebuild indexes afterwards.</div>
+        </div>
+        <hr />
+        <h3>Option A — upload a file</h3>
+        <input id="restore-file" type="file" accept=".archive,.gz,.bson,.dump" />
+        <button id="btn-restore-upload" class="btn primary">⬆ Restore from upload</button>
+        <div id="restore-progress" class="progress-wrap hidden">
+          <span class="spinner"></span>
+          <div class="progress-meta">
+            <div class="progress-title">Running mongorestore… <span id="restore-elapsed" class="elapsed">0.0s</span></div>
+            <div id="restore-status" class="progress-sub">Starting…</div>
+            <div class="progress-track"><div class="progress-fill"></div></div>
+          </div>
+        </div>
+        <hr />
+        <h3>Option B — restore from server library</h3>
+        <div class="row">
+          <select id="restore-server-file" style="flex:1"><option>loading…</option></select>
+          <button id="btn-restore-server" class="btn secondary">Restore selected</button>
+        </div>
+        <div id="restore-result" class="result"></div>
+      </div>
+      <div class="card dark">
+        <h3>Output log</h3>
+        <pre id="restore-log">No restore run yet.</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIBRARY -->
+  <section id="tab-library" class="panel hidden">
+    <h2>Backup library</h2>
+    <div class="row library-toolbar">
+      <button id="btn-refresh" class="btn secondary">↻ Refresh</button>
+      <button id="btn-bulk-download" class="btn secondary" disabled>⬇ Download selected</button>
+      <button id="btn-bulk-delete" class="btn secondary danger" disabled>🗑 Delete selected</button>
+      <span id="lib-selected-count" class="muted-text"></span>
+    </div>
+    <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th><input type="checkbox" id="lib-select-all" /></th><th>File</th><th>Database</th><th>Size</th><th>Modified</th><th>Actions</th></tr></thead>
+      <tbody id="library-body"><tr><td colspan="6">loading…</td></tr></tbody>
+    </table>
+    </div>
+  </section>
+
+  <footer>
+    <p>URIs are only used server-side to run <code>mongodump</code>/<code>mongorestore</code> and are never stored. Passwords are masked in logs.</p>
+  </footer>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
