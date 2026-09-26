@@ -266,7 +266,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Mongo Backup & Restore UI: http://localhost:${PORT}`);
   console.log(`Backups dir: ${BACKUP_DIR}`);
 });
